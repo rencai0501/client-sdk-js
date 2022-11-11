@@ -157,13 +157,8 @@ export function computeVideoEncodings(
   log.debug(`options?.screenShareSimulcastLayers ${options?.screenShareSimulcastLayers}`);
   if (isScreenShare) {
     log.debug(`isScreenShare ${isScreenShare}`);
-    let presetsScreen: Array<VideoPreset> = [];
-    presetsScreen =
-      sortPresets(options?.screenShareSimulcastLayers) ??
-      defaultSimulcastLayers(isScreenShare, original);
-      log.debug(`presetsScreen.length ${presetsScreen.length}`)
-      log.debug(`presetsScreen[0] ${presetsScreen[0].height}  ${presetsScreen[0].width}  ${presetsScreen[0].encoding.maxBitrate}  ${presetsScreen[0].encoding.maxFramerate}`);
-    return encodingsFromPresets(width, height, presetsScreen);
+       log.debug(`original[0] ${original.height}  ${original.width}  ${original.encoding.maxBitrate}  ${original.encoding.maxFramerate}`);
+    return encodingsFromPresets(width, height, [original]);
   }
   let presets: Array<VideoPreset> = [];
   presets =
