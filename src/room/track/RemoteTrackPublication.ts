@@ -258,8 +258,8 @@ export default class RemoteTrackPublication extends TrackPublication {
     log.debug(`adaptivestream video visibility ${this.trackSid}, visible=${visible}`, {
       trackSid: this.trackSid,
     });
-    this.disabled = !visible;
-    this.emitTrackUpdate();
+    //this.disabled = !visible;
+    //this.emitTrackUpdate();
   };
 
   protected handleVideoDimensionsChange = (dimensions: Track.Dimensions) => {

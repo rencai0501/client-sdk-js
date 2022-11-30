@@ -310,6 +310,9 @@ export default class LocalVideoTrack extends LocalTrack {
     if (this.isInBackground && this.source === Track.Source.Camera) {
       this._mediaStreamTrack.enabled = false;
     }
+    else if (!this.isInBackground && this.source === Track.Source.Camera){
+      this._mediaStreamTrack.enabled =true;
+    }
   }
 }
 
