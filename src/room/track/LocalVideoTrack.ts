@@ -307,12 +307,12 @@ export default class LocalVideoTrack extends LocalTrack {
   protected async handleAppVisibilityChanged() {
     await super.handleAppVisibilityChanged();
     if (!isMobile()) return;
-    if (this.isInBackground && this.source === Track.Source.Camera) {
-      this._mediaStreamTrack.enabled = false;
-    }
-    else if (!this.isInBackground && this.source === Track.Source.Camera){
-      this._mediaStreamTrack.enabled =true;
-    }
+    // if (this.isInBackground && this.source === Track.Source.Camera) {
+    //   this._mediaStreamTrack.enabled = false;
+    // }
+    // else if (!this.isInBackground && this.source === Track.Source.Camera){
+    //   this._mediaStreamTrack.enabled =true;
+    // }
   }
 }
 
