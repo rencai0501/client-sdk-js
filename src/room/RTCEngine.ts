@@ -179,7 +179,7 @@ export default class RTCEngine extends (EventEmitter as new () => TypedEventEmit
     }
   }
 
-  close() {
+  async close() {
     this._isClosed = true;
     this.removeAllListeners();
     this.deregisterOnLineListener();
@@ -202,7 +202,7 @@ export default class RTCEngine extends (EventEmitter as new () => TypedEventEmit
       this.subscriber.close();
       this.subscriber = undefined;
     }
-    this.client.close();
+    await this.client.close();
   }
 
   addTrack(req: AddTrackRequest): Promise<TrackInfo> {
@@ -335,7 +335,7 @@ export default class RTCEngine extends (EventEmitter as new () => TypedEventEmit
         const shouldEmit = this.pcState === PCState.New;
         this.pcState = PCState.Connected;
         if (shouldEmit) {
-          this.emit(EngineEvent.Connected);
+          this.emit(EngineEvent.Connected, joinResponse);
         }
       } else if (primaryPC.connectionState === 'failed') {
         // on Safari, PeerConnection will switch to 'disconnected' during renegotiation
@@ -784,9 +784,9 @@ export default class RTCEngine extends (EventEmitter as new () => TypedEventEmit
     }
 
     if (this.client.isConnected) {
-      this.client.sendLeave();
+      await this.client.sendLeave();
     }
-    this.client.close();
+    await this.client.close();
     this.primaryPC = undefined;
     this.publisher?.close();
     this.publisher = undefined;
@@ -1040,7 +1040,7 @@ async function getConnectedAddress(pc: RTCPeerConnection): Promise<string | unde
 class SignalReconnectError extends Error {}
 
 export type EngineEventCallbacks = {
-  connected: () => void;
+  connected: (joinResp: JoinResponse) => void;
   disconnected: (reason?: DisconnectReason) => void;
   resuming: () => void;
   resumed: () => void;

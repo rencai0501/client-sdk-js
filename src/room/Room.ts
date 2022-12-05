@@ -342,7 +342,12 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
       } catch (err) {
         this.recreateEngine();
         this.handleDisconnect(this.options.stopLocalTrackOnUnpublish);
-        reject(new ConnectionError('could not establish signal connection'));
+        let errorMessage = '';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+          log.debug(`error trying to establish signal connection`, { error: err });
+        }
+        reject(new ConnectionError(`could not establish signal connection: ${errorMessage}`));
         return;
       }
 
@@ -404,7 +409,7 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
     }
     // close engine (also closes client)
     if (this.engine) {
-      this.engine.close();
+      await this.engine.close();
     }
     this.handleDisconnect(stopTracks, DisconnectReason.CLIENT_INITIATED);
     /* @ts-ignore */
@@ -440,12 +445,12 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
   /**
    * @internal for testing
    */
-  simulateScenario(scenario: string) {
+  async simulateScenario(scenario: string) {
     let postAction = () => {};
     let req: SimulateScenario | undefined;
     switch (scenario) {
       case 'signal-reconnect':
-        this.engine.client.close();
+        await this.engine.client.close();
         if (this.engine.client.onClose) {
           this.engine.client.onClose('simulate disconnect');
         }
@@ -508,8 +513,8 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
     }
   }
 
-  private onBeforeUnload = () => {
-    this.disconnect();
+  private onBeforeUnload = async () => {
+    await this.disconnect();
   };
 
   /**
@@ -520,7 +525,7 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
    * - `getUserMedia`
    */
   async startAudio() {
-    this.acquireAudioContext();
+    await this.acquireAudioContext();
 
     const elements: Array<HTMLMediaElement> = [];
     this.participants.forEach((p) => {
@@ -778,7 +783,7 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
 
     this.participants.clear();
     this.activeSpeakers = [];
-    if (this.audioContext) {
+    if (this.audioContext && typeof this.options.expWebAudioMix === 'boolean') {
       this.audioContext.close();
       this.audioContext = undefined;
     }
@@ -991,18 +996,22 @@ class Room extends (EventEmitter as new () => TypedEmitter<RoomEventCallbacks>) 
     });
   };
 
-  private acquireAudioContext() {
-    if (this.audioContext) {
-      this.audioContext.close();
+  private async acquireAudioContext() {
+    if (
+      typeof this.options.expWebAudioMix !== 'boolean' &&
+      this.options.expWebAudioMix.audioContext
+    ) {
+      // override audio context with custom audio context if supplied by user
+      this.audioContext = this.options.expWebAudioMix.audioContext;
+      await this.audioContext.resume();
+    } else {
+      // by using an AudioContext, it reduces lag on audio elements
+      // https://stackoverflow.com/questions/9811429/html5-audio-tag-on-safari-has-a-delay/54119854#54119854
+      this.audioContext = getNewAudioContext() ?? undefined;
     }
-    // by using an AudioContext, it reduces lag on audio elements
-    // https://stackoverflow.com/questions/9811429/html5-audio-tag-on-safari-has-a-delay/54119854#54119854
-    const ctx = getNewAudioContext();
-    if (ctx) {
-      this.audioContext = ctx;
-      if (this.options.expWebAudioMix) {
-        this.participants.forEach((participant) => participant.setAudioContext(this.audioContext));
-      }
+
+    if (this.options.expWebAudioMix) {
+      this.participants.forEach((participant) => participant.setAudioContext(this.audioContext));
     }
   }
 
